@@ -74,12 +74,16 @@ const TREE_DATA: FoodNode[] = [
 @Injectable({ providedIn: "root" })
 export class ChecklistDatabase {
   dataChange = new BehaviorSubject<FoodNode[]>([]);
-  treeData: any[];
+  treeData: FoodNode[];
   searchString: string;
+  public checklistSelection = new SelectionModel<FoodFlatNode>(true /* multiple */);
+  public selectedCheckedItems: string[] = [];
+
+  
   get data(): FoodNode[] {
     return this.dataChange.value;
   }
-  get originalData() {
+  get originalData() : FoodNode[] {
     return this.treeData;
   }
   constructor() {
@@ -188,8 +192,9 @@ export class ChipHierarchyComponent implements OnInit {
   dataSource: MatTreeFlatDataSource<FoodNode, FoodFlatNode>;
 
   /** The selection for checklist */
+  //checklistSelection = new SelectionModel<FoodFlatNode>(true /* multiple */);
   checklistSelection = new SelectionModel<FoodFlatNode>(true /* multiple */);
-
+  selectedCheckedItems: string[];
   /// Filtering
   myControl = new FormControl();
   options: string[] = ["One", "Two", "Three"];
@@ -217,7 +222,8 @@ export class ChipHierarchyComponent implements OnInit {
   }
 
   ngOnInit() {
-
+    this.checklistSelection = this._database.checklistSelection;
+    this.selectedCheckedItems = this._database.selectedCheckedItems;
   }
 
 
@@ -250,39 +256,75 @@ export class ChipHierarchyComponent implements OnInit {
 
   /** Whether all the descendants of the node are selected. */
   descendantsAllSelected(node: FoodFlatNode): boolean {
-    const descendants = this.treeControl.getDescendants(node);
+    //const descendants = this.treeControl.getDescendants(node);
+    const descendants = this._database.originalData
+    .find(x => x.item ===  node.item)
+     .children;
     const descAllSelected = descendants.every(child =>
-      this.checklistSelection.isSelected(child)
+      //this.checklistSelection.isSelected(child)
+      this.selectedCheckedItems.indexOf(child.item) > -1
     );
     return descAllSelected;
   }
 
   /** Whether part of the descendants are selected */
   descendantsPartiallySelected(node: FoodFlatNode): boolean {
-    const descendants = this.treeControl.getDescendants(node);
+    //const descendants = this.treeControl.getDescendants(node);
+    const descendants = this._database.originalData
+                      .find(x => x.item ===  node.item)
+                       .children;
     const result = descendants.some(child =>
-      this.checklistSelection.isSelected(child)
+      //this.checklistSelection.isSelected(child)
+      this.selectedCheckedItems.indexOf(child.item) > -1
     );
     return result && !this.descendantsAllSelected(node);
   }
 
   /** Toggle the to-do item selection. Select/deselect all the descendants node */
   todoItemSelectionToggle(node: FoodFlatNode): void {
-    this.checklistSelection.toggle(node);
-    const descendants = this.treeControl.getDescendants(node);
-    this.checklistSelection.isSelected(node)
-      ? this.checklistSelection.select(...descendants)
-      : this.checklistSelection.deselect(...descendants);
-
+    //this.checklistSelection.toggle(node);
+    if(this.selectedCheckedItems.indexOf(node.item) > -1) {
+      this.selectedCheckedItems.splice(this.selectedCheckedItems.indexOf(node.item),1);
+    }else {
+      this.selectedCheckedItems.push(node.item);
+    }
+    //const descendants = this.treeControl.getDescendants(node);
+    const descendants = this._database.originalData
+    .find(x => x.item ===  node.item)
+     .children;
+    // this.checklistSelection.isSelected(node)
+    //   ? this.checklistSelection.select(...descendants)
+    //   : this.checklistSelection.deselect(...descendants);
+    if(this.selectedCheckedItems.indexOf(node.item) > -1) {
+      descendants.forEach(x => {
+        if(! (this.selectedCheckedItems.indexOf(x.item) > -1)) {
+          this.selectedCheckedItems.push(x.item);
+        }
+      })
+    }else {
+      descendants.forEach(x => {
+        if(this.selectedCheckedItems.indexOf(x.item) > -1) {
+          this.selectedCheckedItems.splice(this.selectedCheckedItems.indexOf(x.item),1);
+        }
+      });
+    }
     // Force update for the parent
-    descendants.every(child => this.checklistSelection.isSelected(child));
+   // descendants.every(child => this.checklistSelection.isSelected(child));
+   descendants.every(child => {
+      this.selectedCheckedItems.indexOf(child.item) > -1 
+   });
     this.checkAllParentsSelection(node);
     this.populateSelectedFruits();
   }
 
   /** Toggle a leaf to-do item selection. Check all the parents to see if they changed */
   todoLeafItemSelectionToggle(node: FoodFlatNode): void {
-    this.checklistSelection.toggle(node);
+    //this.checklistSelection.toggle(node);
+    if(this.selectedCheckedItems.indexOf(node.item) > -1) {
+      this.selectedCheckedItems.splice(this.selectedCheckedItems.indexOf(node.item),1);
+    }else {
+      this.selectedCheckedItems.push(node.item);
+    }
     this.checkAllParentsSelection(node);
     this.populateSelectedFruits();
   }
@@ -298,15 +340,26 @@ export class ChipHierarchyComponent implements OnInit {
 
   /** Check root node checked state and change it accordingly */
   checkRootNodeSelection(node: FoodFlatNode): void {
-    const nodeSelected = this.checklistSelection.isSelected(node);
-    const descendants = this.treeControl.getDescendants(node);
+    //const nodeSelected = this.checklistSelection.isSelected(node);
+    const nodeSelected = this.selectedCheckedItems.indexOf(node.item) > -1
+    //const descendants = this.treeControl.getDescendants(node);
+    const descendants = this._database.originalData
+    .find(x => x.item ===  node.item)
+     .children;
     const descAllSelected = descendants.every(child =>
-      this.checklistSelection.isSelected(child)
+      //this.checklistSelection.isSelected(child)
+      this.selectedCheckedItems.indexOf(child.item) > -1 
     );
     if (nodeSelected && !descAllSelected) {
-      this.checklistSelection.deselect(node);
+      //this.checklistSelection.deselect(node);
+      if(this.selectedCheckedItems.indexOf(node.item) > -1 ) {
+        this.selectedCheckedItems.splice(this.selectedCheckedItems.indexOf(node.item),1);
+      }
     } else if (!nodeSelected && descAllSelected) {
-      this.checklistSelection.select(node);
+      //this.checklistSelection.select(node);
+      if(! (this.selectedCheckedItems.indexOf(node.item) > -1) ) {
+        this.selectedCheckedItems.push(node.item);
+      }
     }
   }
   removeSelection(fruitName: string) {
@@ -325,7 +378,8 @@ export class ChipHierarchyComponent implements OnInit {
   }
   /* Get the parent node of a node */
   getParentNode(node: FoodFlatNode): FoodFlatNode | null {
-    console.log(this.checklistSelection.selected);
+    //console.log(this.checklistSelection.selected);
+   // console.log(this.selectedCheckedItems);
     const currentLevel = this.getLevel(node);
 
     if (currentLevel < 1) {
@@ -343,26 +397,29 @@ export class ChipHierarchyComponent implements OnInit {
     }
     return null;
   }
+  checkSelected(node: FoodNode) {
+    const idx= this.selectedCheckedItems.indexOf(node.item) > -1;
+    return idx;
+  }
   populateSelectedFruits(): string[] {
     this.selectedFruits = [];
-    if (!this.checklistSelection.selected.length) {
+   // if (!this.checklistSelection.selected.length) {
+     if(this.selectedCheckedItems.length === 0){
       this.filterChanged('');
     } else {
 
-      this.checklistSelection.selected.map(s => s.item).forEach(element => {
-        this.selectedFruits.push(element);
-      });
+      // this.checklistSelection.selected.map(s => s.item).forEach(element => {
+      //   this.selectedFruits.push(element);
+      // });
+      this.selectedFruits = [...this.selectedCheckedItems];
       this.focusOnPlaceInput();
     }
     return this.selectedFruits;
   }
-  getSelectedItems(): string {
-    if (!this.checklistSelection.selected.length) return "Favorite Food";
-    return this.checklistSelection.selected.map(s => s.item).join(",");
-  }
 
   filterChanged(filterText: string) {
-    console.log("filterChanged", filterText);
+   // console.log("filterChanged", filterText);
+    
     // ChecklistDatabase.filter method which actually filters the tree and gives back a tree structure
     this._database.filterLodash(filterText);
     // if (filterText) {
@@ -370,6 +427,8 @@ export class ChipHierarchyComponent implements OnInit {
     //} else {
     // this.treeControl.collapseAll();
     // }
+    //console.log(this.checklistSelection);
+    console.log('fc' + this.selectedCheckedItems);
   }
   focusOnPlaceInput() {
     //this.autocompleteInput.nativeElement.focus();
