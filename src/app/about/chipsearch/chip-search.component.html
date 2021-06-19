@@ -1,0 +1,28 @@
+<form class="example-form" >
+  <mat-form-field class="example-full-width" style="width: 100%">
+    <mat-chip-list #chipList>
+      <mat-chip style="margin-top:0.4em;" *ngFor="let user of  selectedUsers" 
+      (removed)="toggleSelection(user)">
+  
+        <span>{{ user.firstname }} </span>
+        
+        <mat-icon matChipRemove >cancel</mat-icon>
+      </mat-chip>
+      <input #autocompleteInput type="text" placeholder="Enter title" aria-label="Number" matInput 
+      [formControl]="userControl"
+        [matAutocomplete]="auto" [matChipInputFor]="chipList">
+      <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayFn">
+        <mat-option *ngFor="let user of filteredUsers | async" [value]="selectedUsers">
+          <div (click)="optionClicked($event, user)">
+            <mat-checkbox [checked]="user.selected" (change)="toggleSelection(user)" (click)="$event.stopPropagation()">
+              {{ user.firstname }} {{ user.lastname }}
+            </mat-checkbox>
+          </div>
+        </mat-option>
+      </mat-autocomplete>
+      
+    </mat-chip-list>
+  
+  </mat-form-field>
+  
+  </form>

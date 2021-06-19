@@ -1,0 +1,10 @@
+<div style="text-align: center;">
+    <mat-grid-list cols="2"  [rowHeight]="rowHeight" gutterSize="5px" (window:resize)="onResize($event)">   
+        <mat-grid-tile *ngFor="let pokemon of pokemons; index as i" style="text-align:center">     
+          <a routerLink="/pokemon/{{i+1}}">
+              <img src="https://pokeres.bastionbot.org/images/pokemon/{{i+1}}.png" width="75%" height="75%"/>        
+          </a>
+          <mat-grid-tile-header>  {{ pokemon.name | uppercase }}</mat-grid-tile-header>
+        </mat-grid-tile>
+    </mat-grid-list>
+    </div>

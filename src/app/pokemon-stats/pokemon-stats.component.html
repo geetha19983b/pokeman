@@ -1,0 +1,9 @@
+
+<div *ngIf="statsLoaded"> 
+    <h2>{{ pokemonName | uppercase }}</h2> 
+    <img src="https://pokeres.bastionbot.org/images/pokemon/{{pokemonId}}.png" width="30%" height="30%"/> 
+    <p *ngFor="let stat of pokemonStats; index as i">
+        <span style="font-size: 1.5rem;">{{ stat.stat.name | uppercase }} = {{ stat.base_stat }}</span> 
+    </p> 
+    <a routerLink="/pokemon">View All Pokemons</a>
+</div>
